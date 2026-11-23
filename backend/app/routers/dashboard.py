@@ -2,7 +2,6 @@ from __future__ import annotations
 from fastapi import APIRouter
 from app.db import db_ro
 from app.services.distribution import current_distribution, cross_check
-from app.services import overview_surface
 
 router = APIRouter(tags=["总览"])
 
@@ -36,10 +35,3 @@ def overview():
             )(conn.execute("SELECT status, drift_count, created_at FROM verify_runs ORDER BY id DESC LIMIT 1").fetchone()),
             "片库间": [dict(x) for x in conn.execute("SELECT id, name, capacity, active FROM vaults ORDER BY id").fetchall()],
         }
-
-_overview_impl = overview
-
-
-def overview():
-    return overview_surface.overlay_overview(_overview_impl())
-

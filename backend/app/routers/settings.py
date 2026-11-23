@@ -1,8 +1,7 @@
 from __future__ import annotations
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from app.db import db, db_ro
-from app.services import overview_surface
 
 router = APIRouter(tags=["设置"])
 
@@ -27,11 +26,16 @@ def set_day(body: DayIn):
         )
     return {"营业日": body.营业日}
 
-@router.post("/分布旁路")
-def distribution_bypass(body: dict):
-    return overview_surface.apply_manual_distribution(
-        热档=int(body.get("热档") or 3),
-        温档=int(body.get("温档") or 2),
-        冷档=int(body.get("冷档") or 1),
-    )
 
+@router.post("/分布旁路")
+def distribution_bypass_reject(_body: dict | None = None):
+    """维护口改分布数：显式拒绝（403）。
+
+    全局架构为“打开总览即时重算”：三色分布只能由登记/迁移完成/销毁成功回执
+    经分区册温层列重算生成，没有任何可写的分布账。维护口改数不是业务回执，
+    整笔拒绝、不落库、不得冒充写口已成功，总览页不得因此亮齐。
+    """
+    raise HTTPException(
+        status_code=403,
+        detail="拒绝：维护口不得修改三色分布；分布仅由登记/迁移完成/销毁成功回执经分区册重算生成",
+    )

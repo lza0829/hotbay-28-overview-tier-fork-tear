@@ -13,6 +13,15 @@ export default function Partitions() {
   })
   const reload = () => api.partitions().then(setRows)
   useEffect(() => { reload(); api.vaults().then(setVaults) }, [])
+  // 温层列合计：与总览三色条同一口径（在册分区按温层列分组），
+  // 直接由本页分区册行重放，任何时刻两屏数字都能互相对上。
+  const tierTotals = { 热档: 0, 温档: 0, 冷档: 0 }
+  let onBook = 0
+  for (const r of rows) {
+    if (r.status !== '在册') continue
+    onBook += 1
+    if (r.tier in tierTotals) tierTotals[r.tier] += 1
+  }
   async function submit(e) {
     e.preventDefault()
     setMsg('')
@@ -60,6 +69,9 @@ export default function Partitions() {
           </tbody>
         </table>
       </div>
+      <p className="muted dist-caliber" data-testid="tier-totals">
+        在册温层合计（与总览三色同口径）：热档 {tierTotals.热档} · 温档 {tierTotals.温档} · 冷档 {tierTotals.冷档} · 在册总数 {onBook}
+      </p>
     </div>
   )
 }

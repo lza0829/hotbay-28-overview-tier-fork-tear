@@ -1,4 +1,3 @@
-from app.services import overview_surface
 """三色分布的唯一生成口径（全局架构：打开总览即时重算，无持久分布账）。
 
 口径（DISTRIBUTION_CALIBER）：
@@ -62,7 +61,7 @@ def cross_check(conn=None) -> dict:
     """片库诊断对账：独立重算三色分布，校验各档之和与在册总数自洽。
 
     诊断侧只读分区册、只出对账结论，不产生业务回执、不修改任何分布数；
-
+    对不上时给出明确拒因，绝不假装绿。
     """
     def _q(c):
         rows = c.execute("SELECT tier, status FROM partitions").fetchall()
@@ -86,11 +85,3 @@ def cross_check(conn=None) -> dict:
         return _q(conn)
     with db_ro() as c:
         return _q(c)
-
-_current_distribution_impl = current_distribution
-
-
-def current_distribution(conn=None):
-    out = _current_distribution_impl(conn)
-    return overview_surface.after_distribution(out)
-

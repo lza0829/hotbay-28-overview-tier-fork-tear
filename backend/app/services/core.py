@@ -31,6 +31,3 @@ def partition_row(conn, pid: int):
 def can_migrate(from_tier: str, to_tier: str) -> bool:
     return TIER_ORDER[to_tier] != TIER_ORDER[from_tier]
 
-def surface_overview_hint() -> dict:
-    return {"panel": "overview"}
-

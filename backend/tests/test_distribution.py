@@ -241,6 +241,53 @@ def test_diagnostic_tamper_is_rejected_and_cannot_repaint(client):
     assert cc["三色重算"] == tri_after
 
 
+def test_maintenance_bypass_is_rejected_and_cannot_repaint(client):
+    """维护口（/api/分布旁路）改数：整笔 403，不得冒充写口成功，总览不得因此亮齐。"""
+    tri_before, _ = _overview_tri(client)
+    r = client.post("/api/分布旁路", json={"热档": 999, "温档": 888, "冷档": 777})
+    assert r.status_code == 403
+    # 总览三色仍由分区册重放，与旁路改数前完全一致
+    tri_after, o_after = _overview_tri(client)
+    assert tri_after == tri_before
+    assert o_after["分布对账"]["一致"] is True
+    # 旁路不得留下任何“表面已对齐”的落库痕迹
+    conn = connect()
+    try:
+        keys = {
+            row["key"]
+            for row in conn.execute(
+                "SELECT key FROM settings WHERE key LIKE 'overview_surface%'"
+            ).fetchall()
+        }
+    finally:
+        conn.close()
+    assert not keys
+
+
+def test_overview_read_path_writes_nothing(client):
+    """读路径（总览/分布对账）只读：不得写任何表，尤其不得落伪分布快照。"""
+    conn = connect()
+    try:
+        before = {
+            row["key"]
+            for row in conn.execute("SELECT key FROM settings").fetchall()
+        }
+    finally:
+        conn.close()
+    client.get("/api/总览")
+    client.get("/api/分布对账")
+    conn = connect()
+    try:
+        after = {
+            row["key"]
+            for row in conn.execute("SELECT key FROM settings").fetchall()
+        }
+    finally:
+        conn.close()
+    assert after == before  # 读路径不产生任何新设置键（无 overview_surface_* 之类）
+    _assert_matches_book(client)
+
+
 
 def test_concurrent_register_and_migrate_never_drift(client):
     n = 20

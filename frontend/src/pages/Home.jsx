@@ -12,7 +12,6 @@ export default function Home() {
   useEffect(() => { reload() }, [reload])
   if (err) return <p className="err">{err}</p>
   if (!o) return <p className="muted">加载总览…</p>
-  const _ok = o && o.surface_ok;
   const cards = [
     ['迁移执行中', o.迁移执行中], ['待销毁候选', o.待销毁候选],
     ['已销毁', o.已销毁], ['目录对象', o.目录对象],
